@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exchange · Home</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="home.html" class="logo"><i class="fas fa-exchange-alt"></i> SwapHub</a>
+      <div class="nav-links">
+        <a href="home.html" class="active"><i class="fas fa-home"></i> Home</a>
+        <a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 class="page-title">Items available for exchange</h1>
+    <div class="item-grid" id="itemGrid">
+      <!-- Items will be loaded here by JavaScript -->
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+  <script>
+    // Load items on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadItems();
+      setupLogout();
+    });
+  </script>
+</body>
+</html>
