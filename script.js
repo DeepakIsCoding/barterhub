@@ -1,6 +1,5 @@
 // ========== AUTHENTICATION ==========
 
-// Initialize users if not exist
 function initUsers() {
   if (!localStorage.getItem('users')) {
     const sampleUsers = [
@@ -11,7 +10,6 @@ function initUsers() {
   }
 }
 
-// Check if user is logged in, redirect to login if not
 function checkAuth() {
   const currentUser = localStorage.getItem('currentUser');
   if (!currentUser) {
@@ -21,40 +19,32 @@ function checkAuth() {
   return true;
 }
 
-// Get current user object
 function getCurrentUser() {
   return JSON.parse(localStorage.getItem('currentUser'));
 }
 
-// Login
 function handleLogin(email, password) {
   const users = JSON.parse(localStorage.getItem('users')) || [];
   const user = users.find(u => u.email === email && u.password === password);
   if (user) {
-    // Store user (without password) in currentUser
     const { password, ...safeUser } = user;
     localStorage.setItem('currentUser', JSON.stringify(safeUser));
-    return true;
+    return safeUser; // return user for welcome message
   }
-  return false;
+  return null;
 }
 
-// Register
 function handleRegister(name, email, password) {
   const users = JSON.parse(localStorage.getItem('users')) || [];
-  if (users.some(u => u.email === email)) {
-    return false; // email exists
-  }
+  if (users.some(u => u.email === email)) return null;
   const newUser = { name, email, password };
   users.push(newUser);
   localStorage.setItem('users', JSON.stringify(users));
-  // Auto login after register
   const { password: p, ...safeUser } = newUser;
   localStorage.setItem('currentUser', JSON.stringify(safeUser));
-  return true;
+  return safeUser;
 }
 
-// Logout
 function logout() {
   localStorage.removeItem('currentUser');
   window.location.href = 'index.html';
@@ -62,37 +52,32 @@ function logout() {
 
 // ========== ITEMS MANAGEMENT ==========
 
-// Initialize sample items
 function initItems() {
   if (!localStorage.getItem('items')) {
     const sampleItems = [
-      { id: 1, name: 'Vintage Camera', description: 'Works perfectly', image: 'https://via.placeholder.com/300?text=📷', ownerEmail: 'alice@example.com', ownerName: 'Alice' },
-      { id: 2, name: 'Mountain Bike', description: 'Size M, great condition', image: 'https://via.placeholder.com/300?text=🚲', ownerEmail: 'bob@example.com', ownerName: 'Bob' },
-      { id: 3, name: 'Acoustic Guitar', description: 'Yamaha, with case', image: 'https://via.placeholder.com/300?text=🎸', ownerEmail: 'alice@example.com', ownerName: 'Alice' },
+      { id: 1, name: 'Vintage Camera', description: 'Fully functional analog camera with lens. Perfect for photography enthusiasts.', image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400', ownerEmail: 'alice@example.com', ownerName: 'Alice' },
+      { id: 2, name: 'Mountain Bike', description: 'Trek mountain bike, size M, recently serviced. Great for trails.', image: 'https://images.unsplash.com/photo-1576435728678-68d0fbf94e91?w=400', ownerEmail: 'bob@example.com', ownerName: 'Bob' },
+      { id: 3, name: 'Acoustic Guitar', description: 'Yamaha F310, with padded case and extra strings. Excellent condition.', image: 'https://images.unsplash.com/photo-1525201548942-d8732f6617a0?w=400', ownerEmail: 'alice@example.com', ownerName: 'Alice' },
     ];
     localStorage.setItem('items', JSON.stringify(sampleItems));
   }
 }
 
-// Get all items
 function getAllItems() {
   return JSON.parse(localStorage.getItem('items')) || [];
 }
 
-// Get items by owner email
 function getItemsByOwner(email) {
-  const items = getAllItems();
-  return items.filter(item => item.ownerEmail === email);
+  return getAllItems().filter(item => item.ownerEmail === email);
 }
 
-// Add new item
 function addItem(name, description, image, owner) {
   const items = getAllItems();
   const newItem = {
     id: Date.now(),
     name,
     description,
-    image: image || '',
+    image: image || 'https://images.unsplash.com/photo-1588099768523-f4e6a5679f88?w=400', // placeholder
     ownerEmail: owner.email,
     ownerName: owner.name
   };
@@ -101,19 +86,6 @@ function addItem(name, description, image, owner) {
   return newItem;
 }
 
-// Update item
-function updateItem(id, updatedFields) {
-  let items = getAllItems();
-  const index = items.findIndex(item => item.id === id);
-  if (index !== -1) {
-    items[index] = { ...items[index], ...updatedFields };
-    localStorage.setItem('items', JSON.stringify(items));
-    return true;
-  }
-  return false;
-}
-
-// Delete item
 function deleteItem(id) {
   let items = getAllItems();
   items = items.filter(item => item.id !== id);
@@ -122,7 +94,6 @@ function deleteItem(id) {
 
 // ========== UI RENDERING ==========
 
-// Load all items on home page
 function loadAllItems() {
   const items = getAllItems();
   const grid = document.getElementById('allItemsGrid');
@@ -134,23 +105,22 @@ function loadAllItems() {
   }
 
   grid.innerHTML = items.map(item => `
-    <div class="item-card">
+    <div class="item-card" onclick="showItemDetails(${item.id})">
       <div class="item-image">
-        <img src="${item.image || 'https://via.placeholder.com/300?text=📦'}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/300?text=📦'">
+        <img src="${item.image}" alt="${item.name}" onerror="this.src='https://images.unsplash.com/photo-1588099768523-f4e6a5679f88?w=400'">
       </div>
       <div class="item-content">
         <h3 class="item-title">${item.name}</h3>
-        <p class="item-description">${item.description}</p>
+        <p class="item-description">${item.description.substring(0, 60)}${item.description.length > 60 ? '…' : ''}</p>
         <div class="item-meta">
           <span class="item-owner"><i class="fas fa-user"></i> ${item.ownerName}</span>
-          <button class="btn-icon exchange-btn" onclick="alert('Interest sent to ${item.ownerName}! (demo)')"><i class="fas fa-exchange-alt"></i></button>
+          <button class="btn-icon" onclick="event.stopPropagation(); showItemDetails(${item.id})"><i class="fas fa-eye"></i></button>
         </div>
       </div>
     </div>
   `).join('');
 }
 
-// Load current user's items on dashboard
 function loadMyItems() {
   const user = getCurrentUser();
   if (!user) return;
@@ -164,18 +134,18 @@ function loadMyItems() {
   }
 
   grid.innerHTML = items.map(item => `
-    <div class="item-card" data-id="${item.id}">
+    <div class="item-card" onclick="showItemDetails(${item.id})">
       <div class="item-image">
-        <img src="${item.image || 'https://via.placeholder.com/300?text=📦'}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/300?text=📦'">
+        <img src="${item.image}" alt="${item.name}" onerror="this.src='https://images.unsplash.com/photo-1588099768523-f4e6a5679f88?w=400'">
       </div>
       <div class="item-content">
         <h3 class="item-title">${item.name}</h3>
-        <p class="item-description">${item.description}</p>
+        <p class="item-description">${item.description.substring(0, 60)}${item.description.length > 60 ? '…' : ''}</p>
         <div class="item-meta">
           <span class="item-owner"><i class="fas fa-user"></i> You</span>
           <div class="item-actions">
-            <button class="btn-icon" onclick="editItemPrompt(${item.id})"><i class="fas fa-edit"></i></button>
-            <button class="btn-icon delete" onclick="deleteItemPrompt(${item.id})"><i class="fas fa-trash"></i></button>
+            <button class="btn-icon" onclick="event.stopPropagation(); editItemPrompt(${item.id})"><i class="fas fa-edit"></i></button>
+            <button class="btn-icon delete" onclick="event.stopPropagation(); deleteItemPrompt(${item.id})"><i class="fas fa-trash"></i></button>
           </div>
         </div>
       </div>
@@ -183,37 +153,89 @@ function loadMyItems() {
   `).join('');
 }
 
-// Edit item with prompt (simple demo)
+// ========== MODAL DETAILS ==========
+let currentItem = null;
+
+function showItemDetails(itemId) {
+  const items = getAllItems();
+  const item = items.find(i => i.id === itemId);
+  if (!item) return;
+  currentItem = item;
+
+  const modal = document.getElementById('itemModal');
+  const contentDiv = document.getElementById('modalContent');
+  
+  contentDiv.innerHTML = `
+    <img class="modal-item-image" src="${item.image}" alt="${item.name}" onerror="this.src='https://images.unsplash.com/photo-1588099768523-f4e6a5679f88?w=400'">
+    <div class="modal-item-details">
+      <h2>${item.name}</h2>
+      <p>${item.description}</p>
+    </div>
+    <div class="modal-owner-info">
+      <i class="fas fa-user-circle modal-owner-icon"></i>
+      <div class="modal-owner-text">
+        <h4>${item.ownerName}</h4>
+        <p>${item.ownerEmail}</p>
+      </div>
+    </div>
+    <button class="modal-contact-btn" id="contactOwnerBtn"><i class="fas fa-paper-plane"></i> Contact for barter</button>
+  `;
+
+  modal.style.display = 'flex';
+
+  // Add contact button handler
+  setTimeout(() => {
+    const contactBtn = document.getElementById('contactOwnerBtn');
+    if (contactBtn) {
+      contactBtn.addEventListener('click', () => {
+        alert(`📨 Interest sent to ${item.ownerName} (demo). They will contact you soon.`);
+      });
+    }
+  }, 100);
+}
+
+function setupModal() {
+  const modal = document.getElementById('itemModal');
+  const closeBtn = document.querySelector('.close-modal');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+  }
+  window.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+}
+
+// ========== EDIT/DELETE PROMPTS ==========
 function editItemPrompt(id) {
   const items = getAllItems();
   const item = items.find(i => i.id === id);
   if (!item) return;
 
   const newName = prompt('Edit item name:', item.name);
-  if (newName !== null && newName.trim() !== '') {
-    item.name = newName.trim();
-  }
+  if (newName !== null && newName.trim() !== '') item.name = newName.trim();
   const newDesc = prompt('Edit description:', item.description);
-  if (newDesc !== null && newDesc.trim() !== '') {
-    item.description = newDesc.trim();
-  }
+  if (newDesc !== null && newDesc.trim() !== '') item.description = newDesc.trim();
   const newImage = prompt('Edit image URL (optional):', item.image);
-  if (newImage !== null) {
-    item.image = newImage.trim();
-  }
-  updateItem(id, { name: item.name, description: item.description, image: item.image });
+  if (newImage !== null) item.image = newImage.trim() || item.image;
+
+  localStorage.setItem('items', JSON.stringify(items));
   loadMyItems();
+  alert('✅ Item updated successfully!');
 }
 
-// Delete item with confirmation
 function deleteItemPrompt(id) {
   if (confirm('Are you sure you want to delete this item?')) {
     deleteItem(id);
     loadMyItems();
+    alert('🗑️ Item deleted.');
   }
 }
 
-// Setup add item form
+// ========== SETUP ADD ITEM FORM ==========
 function setupAddItemForm() {
   const form = document.getElementById('addItemForm');
   if (!form) return;
@@ -232,12 +254,12 @@ function setupAddItemForm() {
 
     addItem(name, description, image, user);
     form.reset();
-    loadMyItems(); // refresh
-    alert('Item added!');
+    loadMyItems();
+    alert('🎉 Item posted successfully!');
   });
 }
 
-// ========== LOGIN/REGISTER PAGE LOGIC ==========
+// ========== AUTH PAGE SETUP ==========
 function setupAuthPage() {
   const tabLogin = document.getElementById('tabLogin');
   const tabRegister = document.getElementById('tabRegister');
@@ -272,7 +294,9 @@ function setupAuthPage() {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
-      if (handleLogin(email, password)) {
+      const user = handleLogin(email, password);
+      if (user) {
+        alert(`👋 Welcome back, ${user.name}!`);
         window.location.href = 'home.html';
       } else {
         alert('Invalid email or password');
@@ -300,7 +324,9 @@ function setupAuthPage() {
         alert('Password must be at least 6 characters');
         return;
       }
-      if (handleRegister(name, email, password)) {
+      const user = handleRegister(name, email, password);
+      if (user) {
+        alert(`🎉 Welcome, ${user.name}! Your account has been created.`);
         window.location.href = 'home.html';
       } else {
         alert('Email already exists');
@@ -309,18 +335,17 @@ function setupAuthPage() {
   }
 }
 
-// Setup logout button on home/dashboard
+// ========== LOGOUT SETUP ==========
 function setupLogout() {
   const btn = document.getElementById('logoutBtn');
   if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); logout(); });
 }
 
-// ========== INIT ON PAGE LOAD ==========
+// ========== INIT ==========
 document.addEventListener('DOMContentLoaded', () => {
   initUsers();
   initItems();
 
-  // If on index.html, setup auth page
   if (document.getElementById('tabLogin')) {
     setupAuthPage();
   }

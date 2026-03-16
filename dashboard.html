@@ -47,6 +47,14 @@
     </section>
   </main>
 
+  <!-- Item Detail Modal (same as home) -->
+  <div id="itemModal" class="modal">
+    <div class="modal-content glass-card">
+      <span class="close-modal">&times;</span>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -54,6 +62,7 @@
       loadMyItems();
       setupAddItemForm();
       setupLogout();
+      setupModal();
     });
   </script>
 </body>
